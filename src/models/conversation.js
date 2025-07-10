@@ -18,7 +18,7 @@ const ConversationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
-  status:{type:String},
+  status:{type:String,default:"saved_to_server"},
   // Group chat: name and optional image
   name: { type: String }, // only for group
   image: { type: String }, // optional group image

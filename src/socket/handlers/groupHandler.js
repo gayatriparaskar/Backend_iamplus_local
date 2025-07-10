@@ -30,12 +30,22 @@ const handleCreateGroup = async (io, socket, { name, members = [], admins = [], 
       createdAt: new Date(),
     });
 
-    memberIds.forEach((memberId) => {
-      const sid = onlineUsers[memberId.toString()];
-      if (sid) {
-        io.to(sid).emit("newGroupCreated", { success: true, group });
-      }
-    });
+     // Notify both sender and receiver if they are online
+      memberIds.forEach((memberId) => {
+        let sid=null
+        if(admins[0]?._id !=memberId)
+        {
+        sid = onlineUsers[memberId.toString()];
+        console.log(sid,"siddddddddddddddd");
+        }
+      
+        
+        if (sid ) {
+          io.to(sid).emit("newConvoCreated", { success: true, conversation:group });
+        } else {
+          console.log(`User ${memberId} is offline`);
+        }
+      });
 
     callback?.({ success: true, group });
   } catch (error) {

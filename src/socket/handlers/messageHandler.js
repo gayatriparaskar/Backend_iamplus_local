@@ -34,6 +34,25 @@ const handleSendMessage = async (io, socket, data) => {
         createdBy: senderId,
         createdAt: new Date(),
       });
+    //   conversation?.members.forEach((memberId) => {
+    //     console.log(memberId,"memberIdddddddddd")
+    //   const sid = onlineUsers[memberId.toString()];
+    //    console.log(sid,"siddddddddd")
+    //   if (sid) {
+    //     io.to(sid).emit("newConvoCreated", { success: true, conversation });
+    //   }
+    // });
+      // Notify both sender and receiver if they are online
+      [senderId, receiverId].forEach((memberId) => {
+        const sid = onlineUsers[memberId.toString()];
+        console.log(sid,"siddddddddddddddd");
+        
+        if (sid) {
+          io.to(sid).emit("newConvoCreated", { success: true, conversation });
+        } else {
+          console.log(`User ${memberId} is offline`);
+        }
+      });
     }
 
     const chatData = {
@@ -149,6 +168,9 @@ const handleMarkMessagesRead = async (io, { userId, conversationId }) => {
     console.error("❌ Failed to mark messages read:", err);
   }
 };
+
+
+
 
 module.exports = { handleSendMessage, handleMarkMessagesRead };
 

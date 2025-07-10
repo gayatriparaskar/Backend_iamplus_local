@@ -1,9 +1,16 @@
 const onlineUsers = require("../onlineUsers");
-
-const handleUserOnline = (socket, userId) => {
-  onlineUsers[userId] = socket.id;
-  console.log(`🟢 ${userId} is online`);
+const User = require("../../models/Auth");
+const handleUserOnline = async (socket, userId) => {
+  try {
+      onlineUsers[userId] = socket.id;
+      console.log(`🟢 ${userId} is online`);
+    await User.findByIdAndUpdate(userId, { online_status: "online" ,last_seen:new Date(),});
+    console.log(`✅ User ${userId} marked as online`);
+  } catch (err) {
+    console.error("❌ Failed to update online status:", err);
+  }
 };
+
 
 const handleJoinConversation = (socket, conversationId) => {
   socket.join(conversationId);
