@@ -11,6 +11,10 @@ const MessageSchema = new mongoose.Schema({
     ref: 'UserDetails',
     required: true,
   },
+  receiverId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'UserDetails'
+  },
 
   message: {
     type: String,
@@ -53,8 +57,11 @@ const MessageSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['sent', 'delivered', 'seen'],
-    default: 'sent',
+    default: 'saved',
+  },
+  deleted: {
+    type: Boolean,
+    default: false,
   },
 
   read: { type: Boolean, default: false },

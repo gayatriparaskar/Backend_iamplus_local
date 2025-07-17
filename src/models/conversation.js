@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ConversationSchema = new mongoose.Schema({
   _id: {
-    type: mongoose.Schema.Types.Mixed, // can be either ObjectId (for group) or string (for 1on1)
+    type:String, // can be either ObjectId (for group) or string (for 1on1)
   },
   type: {
     type: String,
@@ -18,7 +18,7 @@ const ConversationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
-  status:{type:String,default:"saved_to_server"},
+  status:{type:String,default:"saved_on_server"},
   // Group chat: name and optional image
   name: { type: String }, // only for group
   image: { type: String }, // optional group image
@@ -48,9 +48,7 @@ const ConversationSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
     seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'UserDetails' }],
     status: {
-      type: String,
-      enum: ["sent", "delivered", "seen"],
-      default: "sent"
+      type: String
     },
     read: { type: Boolean, default: false }
   },
@@ -60,6 +58,7 @@ const ConversationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'UserDetails'
   },
+  deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserDetails" }],
   read: { type: Boolean, default: false }, 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const ConversationGroup = require("../../models/conversation");
 const onlineUsers = require("../onlineUsers");
 
-const handleCreateGroup = async (io, socket, { name, members = [], admins = [], type = "group" }, callback) => {
+const handleCreateGroup = async (io, socket, {_id, name, members = [], admins = [], type = "group" }, callback) => {
   try {
     const creatorId = admins[0]?._id || admins[0];
     const creatorObjId = new mongoose.Types.ObjectId(creatorId);
@@ -17,10 +17,10 @@ const handleCreateGroup = async (io, socket, { name, members = [], admins = [], 
       if (!memberIds.some((id) => id.equals(adminId))) memberIds.push(adminId);
     });
 
-    const newId = new mongoose.Types.ObjectId();
+    // const newId = new mongoose.Types.ObjectId();
 
     const group = await ConversationGroup.create({
-      _id: newId,
+      _id,
       name,
       type,
       status:"saved_on_server",
@@ -33,7 +33,8 @@ const handleCreateGroup = async (io, socket, { name, members = [], admins = [], 
      // Notify both sender and receiver if they are online
       memberIds.forEach((memberId) => {
         let sid=null
-        if(admins[0]?._id !=memberId)
+        // if(admins[0]?._id !=memberId)
+         if (creatorObjId.toString() !== memberId.toString())
         {
         sid = onlineUsers[memberId.toString()];
         console.log(sid,"siddddddddddddddd");

@@ -1,5 +1,5 @@
 const MessageModel = require("../../models/Message");
-const ConversationGroup = require("../../models/conversation");
+const conversation = require("../../models/conversation");
 const User = require("../../models/Auth"); // required for chat list
 const onlineUsers = require("../onlineUsers");
 const mongoose = require("mongoose");
@@ -10,12 +10,12 @@ const handleGetMessage = async ({ conversationId }, callback) => {
       createdAt: 1,
     });
 
-    const enriched = messages.map((msg) => ({
-      ...msg._doc,
-      status: msg.read ? "read" : "delivered",clearImmediate
-    }));
+    // const enriched = messages.map((msg) => ({
+    //   ...msg._doc,
+    //   status: msg.read ? "read" : "received",clearImmediate
+    // }));
 
-    callback({ success: true, data: enriched });
+    callback({ success: true, data: messages });
   } catch (err) {
     console.error("❌ Failed to fetch messages:", err);
     callback({ success: false, error: "Failed to fetch messages" });
@@ -25,8 +25,9 @@ const handleGetMessage = async ({ conversationId }, callback) => {
 // Get full chat list for a user
 const handleAllChatList = async ({ userId }, callback) => {
   try {
-    const conversations = await ConversationGroup.find({
+    const conversations = await conversation.find({
       "members._id": userId,
+        status: { $ne: "deleted" }, // ✅ Exclude soft-deleted conversations
     })
       .sort({ updatedAt: -1 })
       .limit(50)
@@ -47,7 +48,7 @@ const handleAllChatList = async ({ userId }, callback) => {
 
         // Enrich message-level status inside lastMessage
         if (convo.lastMessage) {
-          convo.lastMessage.status = convo.lastMessage.read ? "read" : "delivered";
+          convo.lastMessage.status = convo.lastMessage.read ? "read" : "received";
         }
 
         convo.unreadCount = unreadCount;
@@ -77,12 +78,12 @@ const handleAllChatList = async ({ userId }, callback) => {
           convo.last_seen = userDetails?.last_seen || null;
 
           if (convo.lastMessage) {
-            const isDelivered = convo.lastMessage.status === "delivered" || convo.lastMessage.status === "read";
+            const isDelivered = convo.lastMessage.status === "received" || convo.lastMessage.status === "read";
 
             if (isDelivered) {
               status = "send_to_receiver";
             } else if (isReceiverOnline) {
-              status = "saved_to_server";
+              status = "save_On_server";
             } else {
               status = "saved";
             }
@@ -110,7 +111,7 @@ const handleAllChatList = async ({ userId }, callback) => {
           if (deliveredToSomeone) {
             status = "send_to_receiver";
           } else if (onlineMemberCount > 0) {
-            status = "saved_to_server";
+            status = "saved_on_server";
           } else {
             status = "saved";
           }
@@ -143,8 +144,12 @@ const handleAllChatList = async ({ userId }, callback) => {
 // Get full chat list for a user
 const getAllConversation = async ( {userId} , callback) => {
   try {
-    const conversations = await ConversationGroup.find({
-      "members._id": userId,
+        const objectUserId = new mongoose.Types.ObjectId(userId); // convert to ObjectId
+       const conversations = await conversation.find({
+      "members._id": objectUserId,
+        status: { $ne: "deleted" }, // ✅ Exclude soft-deleted conversations
+        deletedFor: { $ne: objectUserId }, // exclude if this user has soft-deleted it
+
     })
       .sort({ updatedAt: -1 })
       .limit(50)
@@ -157,37 +162,36 @@ const getAllConversation = async ( {userId} , callback) => {
     callback({ success: false, error: "Failed to get chat list" });
   }
 };
-const updateConversation = async ( conversationId , callback) => {
+const updateConversation = async (conversationId, callback) => {
   try {
-    let updateResult=null;
+    // 🔥 Fix: extract ID if it's passed as an object
+    if (typeof conversationId === "object" && conversationId?.conversationId) {
+      conversationId = conversationId.conversationId;
+    }
+
+    let updateResult = null;
+
     if (mongoose.Types.ObjectId.isValid(conversationId)) {
-            // ✅ It's a group (ObjectId)
+      // ✅ It's a group (ObjectId)
+      console.log("grouppppppppppppppppppppppppppppppppppppppp");
+      updateResult = await conversation.findByIdAndUpdate(
+        conversationId,
+        { status: "send_to_receiver", updatedAt: new Date() },
+        { new: true }
+      );
+      console.log("✅ Updated group conversation:", updateResult);
+    } else {
+      // ✅ It's a 1-on-1 (String ID)
+      console.log("1111111111111111111111111111111111111111111");
+      updateResult = await conversation.findOneAndUpdate(
+        { _id: conversationId },
+        { status: "send_to_receiver", updatedAt: new Date() },
+        { new: true }
+      );
+      console.log("✅ Updated 1-on-1 conversation:", updateResult);
+    }
 
-            console.log("grouppppppppppppppppppppppppppppppppppppppp");
-            updateResult = await ConversationGroup.findByIdAndUpdate(
-              new mongoose.Types.ObjectId(conversationId),
-              { status:"send_to_receiver", updatedAt: new Date() },
-              { new: true }
-            );
-            console.log(
-              "✅ Updated 1on1 conversationnnnnnnnnnnnnnnnnnnnnnnnn:",
-              updateResult
-            );
-          } else {
-            // ✅ It's a 1-on-1 (String ID)
-            console.log("1111111111111111111111111111111111111111111");
-            updateResult = await ConversationGroup.findOneAndUpdate(
-              { _id: conversationId },
-              { status:"send_to_receiver", updatedAt: new Date() },
-              { new: true }
-            );
-            console.log(
-              "✅ Updated conversationnnnnnnnnnnnnnnnnnnnnnnnn:",
-              updateResult
-            );
-          }
-
-    callback({ success: true , data:updateResult });
+    callback({ success: true, data: updateResult });
   } catch (err) {
     console.error("❌ Failed to get chat list:", err);
     callback({ success: false, error: "Failed to get chat list" });
