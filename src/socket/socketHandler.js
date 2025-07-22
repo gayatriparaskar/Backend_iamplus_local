@@ -11,6 +11,7 @@ const {
   updateWithUserAlertMessage,
   getServerandUpdateReciever,
   updateMsgAsRead,
+  getMsgAsRead
 } = require("./handlers/messageHandler");
 const {
   handleUserOnline,

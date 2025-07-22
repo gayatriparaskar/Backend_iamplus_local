@@ -28,7 +28,7 @@ const handleJoinCall = (io, socket, roomId) => {
 };
 
 const handleSignal = (io, socket, { roomId, data, to }) => {
-  io.to(to).emit("signal", { from: socket.id, data });
+  socket.to(roomId).emit("signal", { from: socket.id, data }); // ✅
 };
 
 const handleLeaveCall = (io, socket, roomId) => {
