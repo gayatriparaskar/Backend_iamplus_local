@@ -94,7 +94,7 @@ const handleSendMessage = async (io, socket, data, callback) => {
         deliveredTo,
       };
     }
-
+console.log(chatData, "chatDataaaaaaaaaaaaaaaaaaa");
     const savedMsg = await MessageModel.create(chatData);
 
     // io.to(onlineUsers[senderId]).emit("newMessageReceived", {
@@ -278,7 +278,7 @@ console.log(objectUserId,"userId-------------------2")
       .sort({ updatedAt: -1 })
       .limit(50)
       .lean();
-
+console.log(groupMessages,"groupMessages");
     const groupMessageIds = groupMessages.map((msg) => msg._id);
 
     // STEP 4: Add user to seenBy (with timestamp) only if not already present
