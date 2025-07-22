@@ -248,7 +248,9 @@ const getAllMessagesOnServer = async ({ userId }, callback) => {
 const getServerandUpdateReciever = async ({ userId }, callback) => {
   try {
     const objectUserId = new mongoose.Types.ObjectId(userId);
-    // 1. Fetch 1-on-1 messages (direct messages)
+console.log(userId,"userId-------------------1")
+console.log(objectUserId,"userId-------------------2")
+    // STEP 1: Fetch 1-on-1 messages for user
     const personalMessages = await MessageModel.find({
       receiverId: objectUserId,
       status: "save_on_server",
@@ -259,7 +261,7 @@ const getServerandUpdateReciever = async ({ userId }, callback) => {
 
     const personalMessageIds = personalMessages.map((msg) => msg._id);
 
-    // 2. Update 1-on-1 messages to "received"
+    // STEP 2: Update 1-on-1 messages to 'received'
     if (personalMessageIds.length > 0) {
       await MessageModel.updateMany(
         { _id: { $in: personalMessageIds } },
@@ -267,11 +269,11 @@ const getServerandUpdateReciever = async ({ userId }, callback) => {
       );
     }
 
-    // 3. Fetch group messages not yet delivered to this user
+    // STEP 3: Fetch group messages not seen by this user
     const groupMessages = await MessageModel.find({
       type: "group",
       "seenBy._id": { $ne: objectUserId }, // user not in seenBy
-      deliveredTo: { $elemMatch: { _id: objectUserId } },
+      deliveredTo: { $elemMatch: { _id: objectUserId } }, // user in deliveredTo
     })
       .sort({ updatedAt: -1 })
       .limit(50)
@@ -279,9 +281,9 @@ const getServerandUpdateReciever = async ({ userId }, callback) => {
 
     const groupMessageIds = groupMessages.map((msg) => msg._id);
 
-    // 4. Update group messages: push userId to deliveredTo array
+    // STEP 4: Add user to seenBy (with timestamp) only if not already present
     if (groupMessageIds.length > 0) {
-      let abc = await MessageModel.updateMany(
+         let abc = await MessageModel.updateMany(
         {
           _id: { $in: groupMessageIds },
           "seenBy._id": { $ne: objectUserId },
@@ -295,11 +297,11 @@ const getServerandUpdateReciever = async ({ userId }, callback) => {
           },
         }
       );
-      console.log("abcccccccccccccccc", abc);
-    }
-    // 5. Return both types of messages
-    const allMessages = [...personalMessages, ...groupMessages];
+console.log("abcccccccccccccccc",abc)
 
+    }
+    // STEP 5: Return combined result
+    const allMessages = [...personalMessages, ...groupMessages];
     callback({ success: true, data: allMessages });
   } catch (err) {
     console.error("❌ Failed to get or update messages:", err);
