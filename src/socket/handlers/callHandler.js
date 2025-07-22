@@ -1,10 +1,16 @@
 const onlineUsers = require("../onlineUsers");
 
-const handleStartCall = (io, socket, { fromUserId, toUserId, isVideo }) => {
+const handleStartCall = (io, socket,data) => {
+  const { fromUserId, toUserId, isVideo,roomId } = data;
   const toSocketId = onlineUsers[toUserId];
+  console.log("📞 handleStartCall triggered", fromUserId, "→", toUserId, "room:", roomId);
+console.log("📡 Socket ID of receiver:", toSocketId);
+
   if (toSocketId) {
-    io.to(toSocketId).emit("incomingCall", { fromUserId, isVideo });
+    console.log("📡 Socket ID of receiver 22222:", toSocketId);
+    io.to(toSocketId).emit("incomingCall", { fromUserId,toUserId, isVideo , roomId});
   } else {
+      console.log("❌ Receiver is not registered or offline:", toUserId);
     socket.emit("userOffline", { toUserId });
   }
 };

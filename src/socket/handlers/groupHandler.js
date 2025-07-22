@@ -33,8 +33,8 @@ const handleCreateGroup = async (io, socket, {_id, name, members = [], admins = 
      // Notify both sender and receiver if they are online
       memberIds.forEach((memberId) => {
         let sid=null
-        // if(admins[0]?._id !=memberId)
-         if (creatorObjId.toString() !== memberId.toString())
+        if(admins[0]?._id !=memberId)
+        //  if (creatorObjId.toString() !== memberId.toString())
         {
         sid = onlineUsers[memberId.toString()];
         console.log(sid,"siddddddddddddddd");

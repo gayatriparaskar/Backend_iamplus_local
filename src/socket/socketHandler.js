@@ -36,6 +36,7 @@ const {
 
 const { handleEditConversation, handleDeleteConversation } = require("./handlers/Edit&DeleteConversation");
 const {editMessage, deleteMessage } = require("./handlers/Edit&DeleteMessage");
+const onlineUsers = require("../socket/onlineUsers");
 
 function socketHandler(io) {
   io.on("connection", (socket) => {
@@ -51,11 +52,16 @@ function socketHandler(io) {
     socket.on("createGroup", (data, cb) =>
       handleCreateGroup(io, socket, data, cb)
     );
-    socket.on("sendMessage", (data) => handleSendMessage(io, socket, data));
+    socket.on("sendMessage", (data,callback) => handleSendMessage(io, socket, data,callback));
     socket.on("markMessagesRead", (data) => handleMarkMessagesRead(io, data));
     socket.on("markRead", (data) => handleSingleMessageRead(io, socket, data));
 
     // Call signaling
+     socket.on("register", (userId) => {
+    onlineUsers[userId] = socket.id;
+    console.log("Registered:", userId, socket.id);
+  });
+
     socket.on("startCall", (data) => handleStartCall(io, socket, data));
     socket.on("callDeclined", (data) => handleCallDeclined(io, data.toUserId));
     socket.on("joinCall", (roomId) => handleJoinCall(io, socket, roomId));
@@ -86,11 +92,12 @@ function socketHandler(io) {
     socket.on("updateMsgAsRead", async (data, callback) =>
       updateMsgAsRead(data, callback, io, socket)
     );
+    socket.on("getMsgAsRead", async (data ,callback) => getMsgAsRead(data,callback,io,socket))
     socket.on("updateWithUserAlertMessage", async (data, callback) =>
       updateWithUserAlertMessage(
         data.messageId,
         data.conversationId,
-        data.status,
+        data.statusOrUserId,
         callback,
         io
       )
@@ -120,7 +127,10 @@ function socketHandler(io) {
     socket.on("deleteMessage", (data, callback) => {
       deleteMessage(socket, data, callback);
     });
+
+
   });
+  
 }
 
 module.exports = { socketHandler };

@@ -146,7 +146,7 @@ const getAllConversation = async ( {userId} , callback) => {
   try {
         const objectUserId = new mongoose.Types.ObjectId(userId); // convert to ObjectId
        const conversations = await conversation.find({
-      "members._id": objectUserId,
+      "members._id": userId,
         status: { $ne: "deleted" }, // ✅ Exclude soft-deleted conversations
         deletedFor: { $ne: objectUserId }, // exclude if this user has soft-deleted it
 
