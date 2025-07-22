@@ -298,12 +298,13 @@ console.log(objectUserId,"userId-------------------2")
         }
       );
 // console.log("abcccccccccccccccc",abc)
-console.log(personalMessages,"personalMessages");
-console.log(groupMessages,"groupMessages");
+
 
 
     }
     // STEP 5: Return combined result
+    console.log(personalMessages,"personalMessages");
+console.log(groupMessages,"groupMessages");
     const allMessages = [...personalMessages, ...groupMessages];
     console.log(allMessages,"allMessagessssssssss");
     
