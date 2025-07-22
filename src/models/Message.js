@@ -4,6 +4,9 @@ const MessageSchema = new mongoose.Schema({
   _id:{
     type:String
   },
+  type:{
+    type:String
+  },
   conversationId: {
     type: mongoose.Schema.Types.Mixed,  // ObjectId (group) or String (1on1)
     required: true,
