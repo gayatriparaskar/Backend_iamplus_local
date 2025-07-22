@@ -297,11 +297,16 @@ console.log(objectUserId,"userId-------------------2")
           },
         }
       );
-console.log("abcccccccccccccccc",abc)
+// console.log("abcccccccccccccccc",abc)
+console.log(personalMessages,"personalMessages");
+console.log(groupMessages,"groupMessages");
+
 
     }
     // STEP 5: Return combined result
     const allMessages = [...personalMessages, ...groupMessages];
+    console.log(allMessages,"allMessagessssssssss");
+    
     callback({ success: true, data: allMessages });
   } catch (err) {
     console.error("❌ Failed to get or update messages:", err);
