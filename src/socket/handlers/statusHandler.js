@@ -2,6 +2,7 @@ const onlineUsers = require("../onlineUsers");
 const User = require("../../models/Auth");
 const handleUserOnline = async (socket, userId) => {
   try {
+      console.log("📡 Registering online user:", userId, "socket:", socket.id);
       onlineUsers[userId] = socket.id;
       console.log(`🟢 ${userId} is online`);
     await User.findByIdAndUpdate(userId, { online_status: "online" ,last_seen:new Date(),});

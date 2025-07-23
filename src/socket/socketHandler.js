@@ -11,7 +11,7 @@ const {
   updateWithUserAlertMessage,
   getServerandUpdateReciever,
   updateMsgAsRead,
-  getMsgAsRead
+  getMsgAsRead,
 } = require("./handlers/messageHandler");
 const {
   handleUserOnline,
@@ -35,9 +35,19 @@ const {
   updateConversation,
 } = require("./handlers/getMessageHandler");
 
-const { handleEditConversation, handleDeleteConversation } = require("./handlers/Edit&DeleteConversation");
-const {editMessage, deleteMessage } = require("./handlers/Edit&DeleteMessage");
+const {
+  handleEditConversation,
+  handleDeleteConversation,
+} = require("./handlers/Edit&DeleteConversation");
+const { editMessage, deleteMessage } = require("./handlers/Edit&DeleteMessage");
 const onlineUsers = require("../socket/onlineUsers");
+const {
+  handleOffer,
+  handleAnswer,
+  handleCandidate,
+  handleWebRTCDisconnect,
+  registerWebRTCUser,
+} = require("./handlers/webrtcHandler");
 
 function socketHandler(io) {
   io.on("connection", (socket) => {
@@ -53,23 +63,85 @@ function socketHandler(io) {
     socket.on("createGroup", (data, cb) =>
       handleCreateGroup(io, socket, data, cb)
     );
-    socket.on("sendMessage", (data,callback) => handleSendMessage(io, socket, data,callback));
+    socket.on("sendMessage", (data, callback) =>
+      handleSendMessage(io, socket, data, callback)
+    );
     socket.on("markMessagesRead", (data) => handleMarkMessagesRead(io, data));
     socket.on("markRead", (data) => handleSingleMessageRead(io, socket, data));
 
-    // Call signaling
-     socket.on("register", (userId) => {
-    onlineUsers[userId] = socket.id;
-    console.log("Registered:", userId, socket.id);
-  });
+    // WebRTC signaling
+    // src/socket/socketHandler.js
 
-    socket.on("startCall", (data) => handleStartCall(io, socket, data));
-    socket.on("callDeclined", (data) => handleCallDeclined(io, data.toUserId));
+    const onlineUsers = {}; // make sure this is accessible globally
+
+      io.on("connection", (socket) => {
+        console.log("✅ New socket connected:", socket.id);
+
+        // When user comes online
+        socket.on("userOnline", (userId) => {
+          onlineUsers[userId] = socket.id;
+          console.log("🟢 User online:", userId, socket.id);
+        });
+
+        // ✅ ADD THIS STARTCALL HANDLER HERE:
+        socket.on("startCall", ({ fromUserId, toUserId, isVideo, roomId }) => {
+          const toSocketId = onlineUsers[toUserId];
+          console.log(
+            "📞 Incoming call from",
+            fromUserId,
+            "to",
+            toUserId,
+            "room:",
+            roomId
+          );
+          console.log("🌐 Current online users:", onlineUsers);
+          if (toSocketId) {
+            console.log("📞 Sending incomingCall to", toSocketId);
+            io.to(toSocketId).emit("incomingCall", {
+              fromUserId,
+              isVideo,
+              roomId,
+            });
+            console.log("✅ Call sent to", toUserId, "at socket:", toSocketId);
+          } else {
+            socket.emit("userOffline", { toUserId });
+          }
+        });
+
+        // optionally handle callDeclined
+        socket.on("callDeclined", ({ toUserId }) => {
+          const toSocketId = onlineUsers[toUserId];
+          if (toSocketId) {
+            io.to(toSocketId).emit("callDeclined", { from: socket.id });
+          }
+        });
+
+        // Clean up on disconnect
+        socket.on("disconnect", () => {
+          for (const [userId, socketId] of Object.entries(onlineUsers)) {
+            if (socketId === socket.id) {
+              delete onlineUsers[userId];
+              console.log("🔴 User disconnected:", userId);
+              break;
+            }
+          }
+        });
+      });
+
     socket.on("joinCall", (roomId) => handleJoinCall(io, socket, roomId));
     socket.on("signal", (data) => handleSignal(io, socket, data));
     socket.on("leaveCall", (roomId) => handleLeaveCall(io, socket, roomId));
 
-    socket.on("disconnect", () => handleDisconnect(socket));
+    registerWebRTCUser(socket);
+
+    socket.on("offer", (data) => handleOffer(socket, data));
+    socket.on("answer", (data) => handleAnswer(socket, data));
+    socket.on("candidate", (data) => handleCandidate(socket, data));
+
+    socket.on("disconnect", () => {
+      handleWebRTCDisconnect(socket);
+      handleDisconnect(socket); // your existing disconnect handler
+    });
 
     // Get all messages for a conversation
     socket.on("getMessages", async (data, callback) =>
@@ -93,7 +165,9 @@ function socketHandler(io) {
     socket.on("updateMsgAsRead", async (data, callback) =>
       updateMsgAsRead(data, callback, io, socket)
     );
-    socket.on("getMsgAsRead", async (data ,callback) => getMsgAsRead(data,callback,io,socket))
+    socket.on("getMsgAsRead", async (data, callback) =>
+      getMsgAsRead(data, callback, io, socket)
+    );
     socket.on("updateWithUserAlertMessage", async (data, callback) =>
       updateWithUserAlertMessage(
         data.messageId,
@@ -122,16 +196,13 @@ function socketHandler(io) {
       handleAllChatList(data, callback);
     });
     socket.on("editMessage", (data, callback) => {
-      editMessage(socket, io,data, callback);
+      editMessage(socket, io, data, callback);
     });
 
     socket.on("deleteMessage", (data, callback) => {
       deleteMessage(socket, data, callback);
     });
-
-
   });
-  
 }
 
 module.exports = { socketHandler };

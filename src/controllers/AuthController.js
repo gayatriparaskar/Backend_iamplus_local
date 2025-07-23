@@ -66,20 +66,24 @@ module.exports.register = async (req, res) => {
     });
     console.log(`✅ OTP for ${data.phone_number}:`, otp);
 
-    // ✅ Create user
-   const newUser = new UserModel({
-  ...data,
-  status_message: "send",       // ✅ enum safe default
-  online_status: "offline",     // ✅ enum safe default
-  last_seen: new Date(),        // ✅ correct type
-});
-    await newUser.save();
+ 
 
     // ✅ Simulate SMS sending
     const smsSent = await sendSMS(
       data.phone_number,
       `Your OTP for registration is: ${otp}`
     );
+let newUser={};
+    if(smsSent){
+       // ✅ Create user
+    newUser = new UserModel({
+  ...data,
+  status_message: "send",       // ✅ enum safe default
+  online_status: "offline",     // ✅ enum safe default
+  last_seen: new Date(),        // ✅ correct type
+});
+    await newUser.save();
+}
 
     if (!smsSent) {
       return res
