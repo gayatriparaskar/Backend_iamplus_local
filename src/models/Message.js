@@ -29,7 +29,7 @@ const MessageSchema = new mongoose.Schema({
 
   messageType: { 
     type: String,
-    enum: ['text', 'visitor', 'checkin', 'checkout', 'task', 'note', 'file'],
+    enum: ['text', 'visitor', 'checkin', 'checkout', 'task', 'note', 'file','splitMoney'],
     default: 'text'
   },
 
